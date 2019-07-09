@@ -1,0 +1,76 @@
+{% load static from staticfiles %}
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Homepage</title>
+    <link rel='stylesheet' href='{% static "css/index.css"%}'>
+    <script>var errorList = {{errors|safe}}</script>
+    <script>var thresholdList = {{threshold|safe}}</script>
+    <script>var chartdata = {{chartdata|safe}}</script>
+    <script>var hitRate = {{hitRate|safe}}</script>
+    <script>var startTimer = {{startTimer|safe}}</script>
+    <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+    <!-- Don't use this in production: -->
+    <script src="https://unpkg.com/babel-standalone@6.15.0/babel.min.js"></script>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+    <script src='{% static "js/react.js"%}' type='text/babel'></script>
+  </head>
+  <body>
+    <table id='topTable' cellspacing="30">
+      <tr>
+        <td class='topTd'>
+          <table>
+            <thead>
+              <td>Device:</td>
+              <td>Klant:</td>
+              <td>errors:</td>
+            </thead>
+            <tbody id='error'>
+            </tbody>
+          </table>
+        </td>
+        <td class='topTd'>
+          <table cellspacing="-10">
+            <thead>
+              <td>Device:</td>
+              <td>Klant:</td>
+              <td>Aantal scans:</td>
+              <td>Threshold:</td>
+            </thead>
+            <tbody id='threshold'>
+
+            </tbody>
+          </table>
+        </td>
+      </tr>
+      <tr>
+        <td class='topTd'>
+          <div id='matplotlib'>
+          </div>
+          <!-- matplotlib-->
+        </td>
+        <td class='topTd'>
+          <table cellspacing="0">
+            <thead>
+              <td>Device:</td>
+              <td>Klant:</td>
+              <td>Scans:</td>
+              <td>Kassadata:</td>
+              <td>Hitrate:</td>
+            </thead>
+            <tbody id='hitRate'>
+
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    </table>
+    <h1>Dagen geen errors: 0</h1>
+  </body>
+</html>
