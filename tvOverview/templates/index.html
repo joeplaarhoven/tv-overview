@@ -9,7 +9,7 @@
     <script>var thresholdList = {{threshold|safe}}</script>
     <script>var chartdata = {{chartdata|safe}}</script>
     <script>var hitRate = {{hitRate|safe}}</script>
-    <script>var startTimer = {{startTimer|safe}}</script>
+    <!-- <script>var startTimer = {{startTimer|safe}}</script> -->
     <script src="https://unpkg.com/react@16/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -51,8 +51,40 @@
       </tr>
       <tr>
         <td class='topTd'>
-          <div id='matplotlib'>
-          </div>
+          <table>
+            <tr>
+              <td id='matplotlib'>
+              </td>
+              <td>
+                <!--######### nieuwe error hier een nieuwe table row neer zetten -->
+                <table id='errorStats'>
+                  <thead>
+                    <tr>
+                      <td>Error code</td>
+                      <td>Error beschrijving</td>
+                      <td>Aantal cams</td>
+                    </tr>
+                  </thead>
+                  <tr>
+                    <td></td>
+                    <td>No errors:</td>
+                    <td id='noError'></td>
+                  </tr>
+                  <tr>
+                    <td>1</td>
+                    <td>Not pinging:</td>
+                    <td id='error1'></td>
+                  </tr>
+                  <tr>
+                    <td>2</td>
+                    <td>Not scanning:</td>
+                    <td id='error2'></td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+
           <!-- matplotlib-->
         </td>
         <td class='topTd'>

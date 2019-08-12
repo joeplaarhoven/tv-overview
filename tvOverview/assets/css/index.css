@@ -35,3 +35,18 @@ h1{
   margin: 0px;
   text-align: center;
 }
+#matplotlib{
+  width: 50%;
+}
+#errorStats{
+  border-collapse: collapse;
+  width: 97%;
+  border: 1px solid #e3e3e3;
+}
+
+#errorStats td{
+  border: 1px solid #e3e3e3;
+}
+#errorStats td{
+  font-size: 25px;
+}

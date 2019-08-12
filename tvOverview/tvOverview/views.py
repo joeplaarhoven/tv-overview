@@ -13,7 +13,6 @@ import threading
 from background_task import background
 from django.conf import settings
 
-
 import time
 import datetime
 
@@ -39,7 +38,8 @@ def stats(request):
     errorList = []
     thresholdList = []
     hitRateList = []
-    offline = 0
+    noScans = 0
+    thresholdScans = 0
     totalAmount = 0
     online = 0
     yesterday = datetime.datetime.today() - timedelta(days=1)
@@ -48,92 +48,87 @@ def stats(request):
     notPinging()
 
     for x in settings.DB.management.find():
-        cameraSettings = settings.DB.cameras.find({'cameraIdentifier': x['cameraIdentifier']}, {'storeName': 1, 'accountName': 1})
-        if ('scanThreshold' in x):
-            pass
-        else:
-            if(x['wasstraatType'] == 'kettingbaan'):
-                newSettings = {'scanThreshold': 50}
+        try:
+            cameraSettings = settings.DB.cameras.find({'cameraIdentifier': x['cameraIdentifier']}, {'storeName': 1, 'accountName': 1})
+            if ('scanThreshold' in x):
+                pass
+            else:
+                if(x['wasstraatType'] == 'kettingbaan'):
+                    newSettings = {'scanThreshold': 50}
+
+                    myquery = { "cameraIdentifier": x['cameraIdentifier'] }
+                    newvalues = { "$set":  newSettings  }
+
+                    settings.DB.management.update_one(myquery, newvalues)
+
+            if ('wasstraatType' in x):
+                pass
+            else:
+
+                newSettings = {'wasstraatType': 'ketting'}
 
                 myquery = { "cameraIdentifier": x['cameraIdentifier'] }
                 newvalues = { "$set":  newSettings  }
 
-            settings.DB.management.update_one(myquery, newvalues)
+                settings.DB.management.update_one(myquery, newvalues)
 
-        if ('wasstraatType' in x):
+            if ('errorList' in x):
+                pass
+            else:
+
+                newSettings = {'errorList': []}
+
+                myquery = { "cameraIdentifier": x['cameraIdentifier'] }
+                newvalues = { "$set":  newSettings  }
+
+                settings.DB.management.update_one(myquery, newvalues)
+        except:
             pass
-        else:
 
-            newSettings = {'wasstraatType': 'ketting'}
 
-            myquery = { "cameraIdentifier": x['cameraIdentifier'] }
-            newvalues = { "$set":  newSettings  }
-
-            settings.DB.management.update_one(myquery, newvalues)
-
-        if ('errorList' in x):
-            pass
-        else:
-
-            newSettings = {'errorList': []}
-
-            myquery = { "cameraIdentifier": x['cameraIdentifier'] }
-            newvalues = { "$set":  newSettings  }
-
-            settings.DB.management.update_one(myquery, newvalues)
-            print(x)
-
-    for x in settings.DB.management.find():
-        cameraSettings = settings.DB.cameras.find_one({'cameraIdentifier': x['cameraIdentifier']}, {'storeName': 1, 'accountName': 1})
-        print(cameraSettings)
-        #
-        # if(x['errorList'] == []):
-        #
-        #     if(settings.STARTTIMER == False):
-        #         pass
-        #     else:
-        #         settings.STARTTIMER = True
-        # else:
-        #     settings.STARTTIMER = False
-
-        if(x['status'] == 'down'):
-            pass
-        else:
-            if('camera-b8' in str(x['cameraIdentifier'])):
-
-                total = settings.DB.licensePlates.find({'cameraIdentifier': x['cameraIdentifier'], 'createdAt':{'$gte':  yesterday , '$lt' :  now}}, {'licensePlate': 1}).count()
-                totalAmount += total
-                if(total > 0 and total < x['scanThreshold']):
-                    thresholdList.append([cameraSettings['accountName'], total, x['scanThreshold']])
-
-                elif(total == 0):
-                    offline = offline + 1
-                else:
-                    online = online + 1
-                try:
-                    errorList.append([cameraSettings['accountName'], x['errorList']])
-                except:
+    for x in settings.DB.cameras.find():
+        if('camera-b8' in str(x['cameraIdentifier'])):
+            if('accountName' not in x.keys() or x['accountName'] == None and 'storeName' not in x.keys() or x['storeName'] == None):
+                pass
+            else:
+                if('test' in x['accountName']):
                     pass
-                if(total >0):
-                    hitRateList.append([cameraSettings['accountName'], total])
+                else:
+                    total = settings.DB.licensePlates.find({'cameraIdentifier': x['cameraIdentifier'], 'createdAt':{'$gte':  yesterday , '$lt' :  now}}, {'licensePlate': 1}).count()
+                    if(total == 0):
+                        noScans = noScans + 1
+                    elif(total < x['miniThreshold']):
+                        thresholdScans = thresholdScans + 1
+                        percentageThreshold = total / x['miniThreshold']
+                        thresholdList.append([x['accountName'], total, x['miniThreshold'], percentageThreshold])
+                    else:
+                        online = online + 1
+                    errorList.append([x['accountName'], x['errorList']])
+                    if(total >0):
+                        hitRateList.append([x['accountName'], total])
 
-    print(totalAmount)
-    sizes = [online, offline, len(thresholdList)]
-    # if(settings.STARTTIMER == False):
-    #     request.session['startTimer'] = 0
-    # elif(settings.STARTTIMER == True):
-    #     request.session['startTimer'] = 1
-    # explode = (0, 0, 0, 0)  # only "explode" the 2nd slice (i.e. 'Hogs')
-    #
-    # xdata = ['Online', 'Offline', 'onder threshold']
-    chartdata = [online, offline, len(thresholdList)]
+    chartdata = [online, noScans, thresholdScans]
 
     for u in errorList:
+
         if(u[0] == None):
+            print(u)
             errorList.remove(u)
 
+    for u in errorList:
 
-    print(errorList)
+        if(u[0] == None):
+            print(u)
+            errorList.remove(u)
+
+    for u in errorList:
+
+        if(u[0] == None):
+            print(u)
+            errorList.remove(u)
+    timer = settings.DB.management.find_one({"startTimer":{"$exists": True}}, {'startTimer': 1, 'beginDateTime': 1})
+    print(timer)
+
     return render(request, 'index.html', {
         "errors": errorList,
         "threshold": thresholdList,
@@ -148,34 +143,54 @@ def update(request):
     hitRateList = []
     offline = 0
     online = 0
+    newSettings = {}
     yesterday = datetime.datetime.today() - timedelta(days=1)
     now = datetime.datetime.today()
 
     notPinging()
 
 
-    for x in settings.DB.cameras.find({}, {'cameraIdentifier':1, 'storeName': 1, 'accountName': 1, 'scanThreshold': 1, 'errorList': 1, 'status': 1}):
-        if ('scanThreshold' in x):
+    for x in settings.DB.cameras.find({}, {'cameraIdentifier':1, 'storeName': 1, 'accountName': 1, 'miniThreshold': 1, 'errorList': 1, 'status': 1, 'errorStatus': 1}):
+        management = settings.DB.management.find_one({'cameraIdentifier': x['cameraIdentifier']})
+        if ('wasstraatType' in management):
             pass
         else:
 
-            newSettings = {'scanThreshold': 50}
+            newSettings = {'wasstraatType': 'kettingbaan'}
+
+            myquery = { "cameraIdentifier": x['cameraIdentifier'] }
+            newvalues = { "$set":  newSettings  }
+
+            settings.DB.management.update_one(myquery, newvalues)
+
+        management = settings.DB.management.find_one({'cameraIdentifier': x['cameraIdentifier']})
+        if ('miniThreshold' in x):
+            pass
+        else:
+
+            if(management['wasstraatType'] == 'kettingbaan'):
+                newSettings = {'miniThreshold': 50}
+            elif(management['wasstraatType'] == 'Rollover'):
+                newSettings = {'miniThreshold': 25}
+            elif(management['wasstraatType'] == 'Washbox'):
+                newSettings = {'miniThreshold': 10}
 
             myquery = { "cameraIdentifier": x['cameraIdentifier'] }
             newvalues = { "$set":  newSettings  }
 
             settings.DB.cameras.update_one(myquery, newvalues)
 
-        if ('wasstraatType' in x):
+        if ('errorStatus' in x):
             pass
         else:
-
-            newSettings = {'wasstraatType': 'ketting'}
+            newSettings = {'errorStatus': 'up'}
 
             myquery = { "cameraIdentifier": x['cameraIdentifier'] }
             newvalues = { "$set":  newSettings  }
 
             settings.DB.cameras.update_one(myquery, newvalues)
+
+
 
         if ('errorList' in x):
             pass
@@ -190,7 +205,7 @@ def update(request):
             print(x)
 
 
-    for x in settings.DB.cameras.find({}, {'cameraIdentifier':1, 'storeName': 1, 'accountName': 1, 'scanThreshold': 1, 'errorList': 1, 'status': 1}):
+    for x in settings.DB.cameras.find({}, {'cameraIdentifier':1, 'storeName': 1, 'accountName': 1, 'miniThreshold': 1, 'errorList': 1, 'status': 1}):
         if(x['status'] == 'down'):
             pass
         else:
@@ -198,8 +213,8 @@ def update(request):
             if('camera-b8' in str(x['cameraIdentifier'])):
 
                 total = settings.DB.licensePlates.find({'cameraIdentifier': x['cameraIdentifier'], 'createdAt':{'$gte':  yesterday , '$lt' :  now}}, {'licensePlate': 1}).count()
-                if(total > 0 and total < x['scanThreshold']):
-                    thresholdList.append([x['accountName'], total, x['scanThreshold']])
+                if(total > 0 and total < x['miniThreshold']):
+                    thresholdList.append([x['accountName'], total, x['miniThreshold']])
 
                 elif(total == 0):
                     offline = offline + 1
@@ -232,58 +247,57 @@ def update(request):
     return JsonResponse(done)
 
 def notPinging():
-
-    for x in settings.DB.management.find():
-
+    errorList = []
+    for x in settings.DB.cameras.find():
         if('lastPing' in x):
-            if(x['status'] != 'down'):
-                difference = timeDifference(x['lastPing'])
-                if(difference[2] >= 5):
 
-                    errorList = x['errorList']
-                    if(1 in x['errorList']):
-                        pass
-                    else:
-                        x['errorList'].append(1)
-                        myquery = { "cameraIdentifier": x['cameraIdentifier'] }
-                        newSettings = {'errorList': errorList}
-                        newvalues = { "$set":  newSettings  }
+            difference = timeDifference(x['lastPing'])
+            print(difference)
+            if(difference[2] >= 5):
 
-                        settings.DB.management.update_one(myquery, newvalues)
+                errorList = x['errorList']
+                if(1 in x['errorList']):
+                    pass
                 else:
-                    errorList = x['errorList']
-                    if(1 in x['errorList']):
-                        x['errorList'].remove(1)
-                        myquery = { "cameraIdentifier": x['cameraIdentifier'] }
-                        newSettings = {'errorList': errorList}
-                        newvalues = { "$set":  newSettings  }
+                    errorList.append(1)
+                    myquery = { "cameraIdentifier": x['cameraIdentifier'] }
+                    newSettings = {'errorList': errorList}
+                    newvalues = { "$set":  newSettings  }
 
-                        settings.DB.management.update_one(myquery, newvalues)
+                    settings.DB.management.update_one(myquery, newvalues)
+            else:
+                errorList = x['errorList']
+                if(1 in x['errorList']):
+                    x['errorList'].remove(1)
+                    myquery = { "cameraIdentifier": x['cameraIdentifier'] }
+                    newSettings = {'errorList': errorList}
+                    newvalues = { "$set":  newSettings  }
+
+                    settings.DB.management.update_one(myquery, newvalues)
 
 
 
         if('lastScan' in x):
-            if(x['status'] != 'down'):
-                difference = timeDifference(x['lastScan'])
-                if(difference[2] >= 15):
-                    errorList = x['errorList']
-                    if(2 in x['errorList']):
-                        pass
-                    else:
-                        x['errorList'].append(2)
-                        myquery = { "cameraIdentifier": x['cameraIdentifier'] }
-                        newSettings = {'errorList': errorList}
-                        newvalues = { "$set":  newSettings  }
-
-                        settings.DB.management.update_one(myquery, newvalues)
-
+            difference = timeDifference(x['lastScan'])
+            if(difference[2] >= 15):
+                errorList = x['errorList']
+                if(2 in x['errorList']):
+                    pass
                 else:
-                    errorList = x['errorList']
-                    if(2 in x['errorList']):
-                        print(x['accountName'], x['errorList'])
-                        x['errorList'].remove(2)
-                        myquery = { "cameraIdentifier": x['cameraIdentifier'] }
-                        newSettings = {'errorList': errorList}
-                        newvalues = { "$set":  newSettings  }
+                    errorList.append(2)
+                    myquery = { "cameraIdentifier": x['cameraIdentifier'] }
+                    newSettings = {'errorList': errorList}
+                    newvalues = { "$set":  newSettings  }
 
-                        settings.DB.management.update_one(myquery, newvalues)
+                    settings.DB.cameras.update_one(myquery, newvalues)
+
+            else:
+                errorList = x['errorList']
+                if(2 in x['errorList']):
+                    print(x['accountName'], x['errorList'])
+                    x['errorList'].remove(2)
+                    myquery = { "cameraIdentifier": x['cameraIdentifier'] }
+                    newSettings = {'errorList': errorList}
+                    newvalues = { "$set":  newSettings  }
+
+                    settings.DB.cameras.update_one(myquery, newvalues)

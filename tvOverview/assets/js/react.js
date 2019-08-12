@@ -1,4 +1,8 @@
 
+console.log(thresholdList)
+
+
+
 jQuery(document).ready(function ($) {
       var value = JSON.parse(localStorage.getItem('startTimer'));
        console.log(value)
@@ -6,60 +10,86 @@ jQuery(document).ready(function ($) {
 
 //errorList
 function update(errorList, thresholdList, hitRate){
-  // console.log(errorList)
-  // var errors = errorList.sort(function(a, b){
-  //   // ASC  -> a.length - b.length
-  //   // DESC -> b.length - a.length
-  //   return b[1].length - a[1].length;
-  // })
-  // var deviceName = ''
-  // var errorList = []
-  // var fullError = []
-  //
-  // for (var x = 0; x <= 10; x++){
-  //   errorList = ''
-  //   for(var s in errors[x][1]){
-  //     errorList += errors[x][1][s]
-  //     errorList += ', '
-  //   }
-  //   var errorL = errorList.slice(0, -2);
-  //   console.log(errorL)
-  //   var percentage = errorL.length
-  //
-  //
-  //   var klant = errors[x][0].split('@')
-  //   console.log(klant[0])
-  //
-  //   var device = klant[1].split('.')
-  //   console.log(device[0])
-  //   var errorRow = '<tr id=t'+t+' style="background-color: rgba(255, 0, 0, 0.'+Math.round(percentage)+')"><td>' + device[0] + '</td><td>' + klant[0] + '</td><td>' + errorL + '</td></tr>'
-  //   fullError.push(errorRow)
-  // }
-  //
-  // $( "#error" ).html( fullError );
+
+  var errorStats = {
+    noError: 0,
+    error1: 0,
+    error2: 0,
+  }
+  for (var t = 0; t < errorList.length; t++){
+    console.log(errorList[t])
+    if(errorList[t][1].length > 0){
+      for(var x = 0; x < errorList[t][1].length; x++){
+        if(errorList[t][1][x] == 1){
+          errorStats['error1']++
+        }
+        else if (errorList[t][1][x] == 2) {
+          errorStats['error2']++
+        }
+      }
+    }
+    else{
+      errorStats['noError']++
+    }
+  }
+  $('#noError').text(errorStats['noError'])
+  $('#error1').text(errorStats['error1'])
+  $('#error2').text(errorStats['error2'])
+
+  var errors = errorList.sort(function(a, b){
+    // ASC  -> a.length - b.length
+    // DESC -> b.length - a.length
+    return b[1].length - a[1].length;
+
+  })
+  var deviceName = ''
+  var errorList = []
+  var fullError = []
+
+  for (var x = 0; x <= 10; x++){
+    errorList = ''
+    for(var s in errors[x][1]){
+      errorList += errors[x][1][s]
+      errorList += ', '
+    }
+    var errorL = errorList.slice(0, -2);
+    console.log(errorL)
+    var percentage = errorL.length
+
+
+    var klant = errors[x][0].split('@')
+    console.log(klant[0])
+
+    var device = klant[1].split('.')
+    console.log(device[0])
+    var errorRow = '<tr id=t'+t+' style="background-color: rgba(255, 0, 0, 0.'+ Math.round(percentage) +')"><td>' + device[0] + '</td><td>' + klant[0] + '</td><td>' + errorL + '</td></tr>'
+    fullError.push(errorRow)
+  }
+
+  $( "#error" ).html( fullError );
 
 
   //threshold
   var fullThreshold = []
 
-  var threshold = thresholdList.sort(sortFunction);
 
-  function sortFunction(a, b) {
-      if (a[1] === b[1]) {
+  var threshold = thresholdList.sort(function(a, b) {
+      if (a[3] === b[3]) {
           return 0;
       }
       else {
-          return (a[1] < b[1]) ? -1 : 1;
+          return (a[3] > b[3]) ? -1 : 1;
       }
-  }
+  });
   for (var t = 0; t <= 10; t++){
     errorList = ''
-    var percentage = threshold[t][1] / threshold[t][2] * 100
+    var percentage = threshold[t][3]
+    percentage = Math.abs(percentage - 1)
     var klant = threshold[t][0].split('@')
 
     var device = klant[1].split('.')
 
-    var thresholdRow = '<tr id=t'+t+' style="background-color: rgba(255, 0, 0, 0.'+Math.round(percentage)+')"><td>' + device[0] + '</td><td>' + klant[0] + '</td><td>' + threshold[t][1] + '</td><td>' + threshold[t][2] + '</td></tr>'
+    var thresholdRow = '<tr id=t'+t+' style="background-color: rgba(255, 0, 0, '+percentage+')"><td>' + device[0] + '</td><td>' + klant[0] + '</td><td>' + threshold[t][1] + '</td><td>' + threshold[t][2] + '</td></tr>'
 
     fullThreshold.push(thresholdRow)
   }
