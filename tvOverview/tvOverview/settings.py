@@ -25,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'kxbn%uo1%4a_*mzxgfn9j@5-f=lxe7^&)xqo)mp)(#a*b8=!^5'
+SECRET_KEY = ""
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -34,7 +34,7 @@ ALLOWED_HOSTS = []
 
 
 # database gegevens
-URL="mongodb://walnut:!WalnutLoyalty212C@aws-eu-west-1-portal.1.dblayer.com:16223/walnut-production?ssl=true"
+URL=""
 
 CLIENT = pymongo.MongoClient(URL, ssl_cert_reqs=ssl.CERT_NONE)
 
